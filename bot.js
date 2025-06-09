@@ -1,3 +1,5 @@
+// Make sure to install qrcode-terminal: npm install qrcode-terminal
+
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, downloadContentFromMessage, Browsers } = require('@whiskeysockets/baileys');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs').promises;
@@ -73,30 +75,13 @@ const question = (text) => {
 async function connectToWhatsApp() {
     const authDir = 'auth_info';
     const { state, saveCreds } = await useMultiFileAuthState(authDir);
-
-    // Log whether auth state was loaded
     console.log('Auth state loaded:', state.creds ? 'yes' : 'no');
 
     const sock = makeWASocket({
-        browser: Browsers.ubuntu('SIRTECH0'), // Set custom browser name
+        browser: Browsers.ubuntu('SIRTECH0'),
         auth: state,
+        printQRInTerminal: true,
     });
-
-    // Check if session is active (optional, as baileys handles this)
-    let isSessionActive = !!state.creds;
-    if (!isSessionActive) {
-        const phoneNumber = await question('Sema namba yako (e.g., 12345678901): ');
-        try {
-            const code = await sock.requestPairingCode(phoneNumber.trim());
-            console.log('Pairing code yako: ', code);
-            console.log('Fungua WhatsApp > Settings > Linked Devices > Link with phone number, weka hii code.');
-        } catch (error) {
-            console.error('Code haikublock:', error);
-            process.exit(1);
-        }
-    } else {
-        console.log('Niko ndani tayari...');
-    }
 
     sock.ev.on('creds.update', saveCreds);
 
@@ -129,53 +114,6 @@ async function connectToWhatsApp() {
             const uploadedUrl = await uploadStickerToImgBB(stickerBuffer);
             if (uploadedUrl) {
                 favoriteStickers.push(uploadedUrl);
-                await sock.sendMessage(remoteJid, { text: 'Sticker imestick! Nimeisave—tari kwa next round.' });
+                await sock.sendMessage(remoteJid, { text: 'Sticker imestick! Nimeisave—tayari kwa next round.' });
             } else {
-                await sock.sendMessage(remoteJid, { text: 'Aisee, sticker haikusave—kuna noma!' });
-            }
-            return;
-        }
-
-        // Sticker reply
-        if (msg.message.stickerMessage) {
-            await sock.sendMessage(remoteJid, { sticker: { url: getRandomSticker() } });
-            return;
-        }
-
-        // Group commands
-        if (isGroupChat) {
-            const lowerText = text.toLowerCase();
-            if (lowerText === '.gemini on') {
-                geminiOnInGroups.set(remoteJid, true);
-                await sock.sendMessage(remoteJid, { text: 'Mambo! Niko fiti, tayari kuchat na genge!' });
-                return;
-            } else if (lowerText === '.gemini off') {
-                geminiOnInGroups.set(remoteJid, false);
-                await sock.sendMessage(remoteJid, { text: 'Sare, nanyamaza—nitacall back!' });
-                return;
-            }
-
-            if (!geminiOnInGroups.get(remoteJid) || !text) return;
-        }
-
-        // Reply to text
-        if (text || isReplyToBot) {
-            const reply = await queryGemini(text, isReplyToBot);
-            await sock.sendMessage(remoteJid, { text: reply });
-        }
-    });
-
-    return sock;
-}
-
-async function startBot() {
-    try {
-        await connectToWhatsApp();
-    } catch (error) {
-        console.error('Noma iko:', error);
-        process.exit(1);
-    }
-}
-
-startBot();
-process.stdin.resume();
+                await sock.sendMessage(remoteJid, { text: 'Aisee, sticker haikusave—kuna
