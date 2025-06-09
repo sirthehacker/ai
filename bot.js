@@ -1,4 +1,4 @@
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, downloadContentFromMessage } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, downloadContentFromMessage, Browsers } = require('@whiskeysockets/baileys');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs').promises;
 const axios = require('axios');
@@ -74,14 +74,16 @@ async function connectToWhatsApp() {
     const authDir = 'auth_info';
     const { state, saveCreds } = await useMultiFileAuthState(authDir);
 
-    let isSessionActive = false;
-    try {
-        const credsFile = `${authDir}/creds.json`;
-        isSessionActive = await fs.access(credsFile).then(() => true).catch(() => false);
-    } catch {}
+    // Log whether auth state was loaded
+    console.log('Auth state loaded:', state.creds ? 'yes' : 'no');
 
-    const sock = makeWASocket({ auth: state });
+    const sock = makeWASocket({
+        browser: Browsers.ubuntu('SIRTECH0'), // Set custom browser name
+        auth: state,
+    });
 
+    // Check if session is active (optional, as baileys handles this)
+    let isSessionActive = !!state.creds;
     if (!isSessionActive) {
         const phoneNumber = await question('Sema namba yako (e.g., 12345678901): ');
         try {
@@ -127,7 +129,7 @@ async function connectToWhatsApp() {
             const uploadedUrl = await uploadStickerToImgBB(stickerBuffer);
             if (uploadedUrl) {
                 favoriteStickers.push(uploadedUrl);
-                await sock.sendMessage(remoteJid, { text: 'Sticker imestick! Nimeisave—tayari kwa next round.' });
+                await sock.sendMessage(remoteJid, { text: 'Sticker imestick! Nimeisave—tari kwa next round.' });
             } else {
                 await sock.sendMessage(remoteJid, { text: 'Aisee, sticker haikusave—kuna noma!' });
             }
